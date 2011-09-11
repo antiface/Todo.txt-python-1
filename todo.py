@@ -34,16 +34,6 @@ except ImportError:
 	# But it is a nice feature to have. Sucks to be an OSX user.
 	pass
 
-try:
-	import git
-except ImportError:
-	if sys.version_info < (3, 0):
-		print("You must download and install GitPython from: \
-http://pypi.python.org/pypi/GitPython")
-	else:
-		print("GitPython is not available for Python3 last I checked.")
-	sys.exit(52)
-
 # concat() is necessary long before the grouping of function declarations
 concat = lambda str_list, sep='': sep.join(str_list)
 _path = lambda p: os.path.abspath(os.path.expanduser(p))
@@ -80,7 +70,6 @@ CONFIG = {
 		"TMP_FILE" : _pathc([TODO_DIR, "/todo.tmp"]),
 		"DONE_FILE" : _pathc([TODO_DIR, "/done.txt"]),
 		"REPORT_FILE" : _pathc([TODO_DIR, "/report.txt"]),
-		"GIT" : git.Git(TODO_DIR),
 		"PRI_A" : "",
 		"PRI_B" : "",
 		"PRI_C" : "",
@@ -115,84 +104,6 @@ def rewrite_file(fd, lines):
 	fd.seek(0, 0)
 	fd.truncate(0)
 	fd.writelines(lines)
-
-
-def _git_err(g):
-	"""
-	Print any errors that result from GitPython and exit.
-	"""
-	if g.stderr:
-		print(g.stderr)
-	else:
-		print(g)
-	sys.exit(g.status)
-
-
-def _git_pull():
-	"""
-	Pull any commits that exist on the remote to the local repository.
-	"""
-	try:
-		print(CONFIG["GIT"].pull())
-	except git.exc.GitCommandError, g:
-		_git_err(g)
-
-
-def _git_push():
-	"""
-	Push commits made locally to the remote.
-	"""
-	try:
-		s = CONFIG["GIT"].push()
-	except git.exc.GitCommandError, g:
-		_git_err(g)
-	if s:
-		print(s)
-	else:
-		print("TODO: 'git push' executed.")
-
-
-def _git_status():
-	"""
-	Print the status of the local repository if the version of git is 1.7
-	or later.
-	"""
-	try:
-		print(CONFIG["GIT"].status())
-	except git.exc.GitCommandError, g:
-		_git_err(g)
-
-
-def _git_log():
-	"""
-	Print the two latest commits in the local repository's log.
-	"""
-	lines = CONFIG["GIT"].log("-2")
-	flines = []
-	for line in lines.split("\n"):
-		if re.match("commit", line):
-			flines.append(concat([TERM_COLORS["yellow"],
-				line[:-1], TERM_COLORS["default"], "\n"]))
-		else:
-			flines.append(concat([line, "\n"]))
-
-	flines[-1] = flines[-1][:-1]
-	print(concat(flines))
-
-
-def _git_commit(files, message):
-	"""
-	Make a commit to the git repository.
-		* files should be a list like ['file_a', 'file_b'] or ['-a']
-	"""
-	try:
-		CONFIG["GIT"].commit(files, "-m", message)
-	except git.exc.GitCommandError, g:
-		_git_err(g)
-	if "-a" not in files:
-		print(concat(["TODO: ", concat(files, ", "), " archived."]))
-	else:
-		print(concat(["TODO: ", CONFIG["TODO_DIR"], " archived."]))
 
 
 def prompt(*args, **kwargs):
@@ -230,7 +141,6 @@ def get_config(config_name="", dir_name=""):
 	if dir_name:
 		CONFIG["TODO_DIR"] = _path(dir_name)
 
-	repo = CONFIG["GIT"]
 	if not CONFIG["TODOTXT_CFG_FILE"]:
 		config_file = concat([CONFIG["TODO_DIR"], "/config"])
 	else:
@@ -263,85 +173,10 @@ def get_config(config_name="", dir_name=""):
 						items[1] = concat([CONFIG[items[1][1:i]], items[1][i:]])
 					elif re.match("home", items[1][1:i], re.I):
 						items[1] = _pathc(['~', items[1][i:]])
-				elif items[0] == "TODO_DIR":
-					CONFIG["GIT"] = git.Git(items[1])
 				else:
 					CONFIG[items[0]] = items[1]
 
 		f.close()
-	if CONFIG["TODOTXT_CFG_FILE"] not in repo.ls_files():
-		repo.add([CONFIG["TODOTXT_CFG_FILE"]])
-
-
-def repo_config():
-	"""
-	Help the user configure their git repository.
-	"""
-	from getpass import getuser
-	from os import getenv
-	g = CONFIG["GIT"]
-	# local configuration
-	try:
-		user_name = g.config("--global", "--get", "user.name")
-	except:
-		user_name = getuser()
-
-	try:
-		user_email = g.config("--global", "--get", "user.email")
-	except:
-		user_email = concat([user.name, "@", getenv("HOSTNAME")])
-
-	print("First configure your local repository options.")
-	ret = prompt("git config user.name", user_name, "?")
-	if ret:
-		user_name = ret
-	ret = prompt("git config user.email", user_email, "?")
-	if ret:
-		user_email = ret
-
-	g.config("user.name", user_name)
-	g.config("user.email", user_email)
-
-	# remote configuration
-	ret = prompt("Would you like to add a remote repository?")
-	if re.match("y(es)?", ret, flags=re.I):
-		remote_host = None
-		remote_path = None
-		remote_user = None
-		remote_branch = None
-
-		while not remote_host:
-			remote_host = prompt("Remote hostname:")
-			if not remote_host:
-				print("Please enter the remote's hostname.")
-		while not remote_path:
-			remote_path = prompt("Remote path:")
-			if not remote_path:
-				print("Please enter the path to the remote's repository.")
-		while not remote_user:
-			remote_user = prompt("Remote user:")
-			if not remote_user:
-				print("Please enter the user on the remote machine.")
-		while not remote_branch:
-			remote_branch = prompt("Remote branch:")
-			if not remote_branch:
-				print("Please enter the branch to push to on the remote machine.")
-		prompt("Press enter when you have initialized a bare",
-			"repository on the remote or are ready to proceed.")
-		local_branch = g.branch()
-		if not local_branch:
-			local_branch = "master"
-		else:
-			for l in local_branch.split("\n"):
-				if re.match("^\*\s.*", l):
-					local_branch = re.sub("^\*\s", "", l)
-					break
-
-		g.remote("add", "origin", concat([remote_user, "@", remote_host,
-				":", remote_path]))
-		g.config(concat(["branch.", local_branch, ".remote"]), "origin")
-		g.config(concat(["branch.", local_branch, ".merge"]),
-				concat(["refs/heads/", remote_branch]))
 
 
 def default_config():
@@ -354,21 +189,8 @@ def default_config():
 		"""
 		open(filename, "w").close()
 
-	repo = CONFIG["GIT"]
 	if not os.path.exists(CONFIG["TODO_DIR"]):
 		os.makedirs(CONFIG["TODO_DIR"])
-	try:
-		repo.status()
-	except git.exc.GitCommandError, g:
-		val = prompt("Would you like to create a new git repository in",
-				CONFIG["TODO_DIR"], "? [y/N]")
-		if re.match('y(es)?', val, re.I):
-			print(repo.init())
-			val = prompt("Would you like {prog} to help you",
-			"configure your new git repository? [y/n]",
-			prog=CONFIG["TODO_PY"])
-			if re.match('y(es)?', val, re.I):
-				repo_config()
 
 	# touch/create files needed for the operation of the script
 	for item in ['TODO_FILE', 'TMP_FILE', 'DONE_FILE', 'REPORT_FILE']:
@@ -383,15 +205,11 @@ def default_config():
 	CONFIG["PRI_X"] = "white"
 
 	for k, v in CONFIG.items():
-		if k != "GIT":
-			if v in TO_CONFIG.keys():
-				cfg.write(concat(["export ", k, "=", TO_CONFIG[v], "\n"]))
-			else:
-				cfg.write(concat(["export ", k, '="', v, '"\n']))
+		if v in TO_CONFIG.keys():
+			cfg.write(concat(["export ", k, "=", TO_CONFIG[v], "\n"]))
+		else:
+			cfg.write(concat(["export ", k, '="', v, '"\n']))
 
-	repo.add([CONFIG["TODOTXT_CFG_FILE"], CONFIG["TODO_FILE"],
-	CONFIG["TMP_FILE"], CONFIG["DONE_FILE"], CONFIG["REPORT_FILE"]])
-	repo.commit("-m", CONFIG["TODO_PY"] + " initial commit.")
 	print(concat(["Default configuration completed. Please ",
 		"re-run {prog} with '-h' and 'help' separately.".format(
 			prog=CONFIG["TODO_PY"])]))
@@ -405,7 +223,6 @@ def add_todo(line):
 	Add a new item to the list of things todo.
 	"""
 	prepend = CONFIG["PRE_DATE"]
-	_git = CONFIG["GIT"]
 	fd = open(CONFIG["TODO_FILE"], "r+")
 	l = len(fd.readlines()) + 1
 	if re.match("(\([ABC]\))", line) and prepend:
@@ -419,7 +236,6 @@ def add_todo(line):
 	s = "TODO: '{0}' added on line {1}.".format(
 		line, l)
 	print(s)
-	_git_commit([CONFIG["TODO_FILE"]], s)
 
 
 def addm_todo(lines):
@@ -451,7 +267,6 @@ def do_todo(line):
 		fd.close()
 		print(removed[:-1])
 		print("TODO: Item {0} marked as done.".format(line))
-		_git_commit([CONFIG["DONE_FILE"]], removed)
 
 
 def delete_todo(line):
@@ -469,7 +284,6 @@ def delete_todo(line):
 		removed = "'{0}' deleted.".format(removed[:-1])
 		print(removed)
 		print("TODO: Item {0} deleted.".format(line))
-		_git_commit([CONFIG["TODO_FILE"]], removed)
 ### End new todo Functions
 
 
@@ -495,7 +309,6 @@ def post_success(item_no, old_line, new_line):
 	print_str = "TODO: Item {0} changed from '{1}' to '{2}'.".format(
 		item_no + 1, old_line, new_line)
 	print(print_str)
-	_git_commit([CONFIG["TODO_FILE"]], print_str)
 
 
 def append_todo(args):
@@ -630,20 +443,7 @@ Usage:""", CONFIG["TODO_PY"], """command [arg(s)]
 		Add "text to prepend" to the beginning of the item.
 
 	pri | p NUMBER [ABC]
-		Add priority specified (A, B, or C) to item NUMBER.
-
-	pull
-		Pulls from the remote for your git repository.
-
-	push
-		Pushs to the remote for your git repository.
-
-	status
-		If using $(git --version) > 1.7, shows the status of your local
-		git repository.
-
-	log
-		Shows the last two commits in your local git repository."""], " "))
+		Add priority specified (A, B, or C) to item NUMBER."""], " "))
 	sys.exit(0)
 ### HELP
 
@@ -921,11 +721,6 @@ if __name__ == "__main__" :
 			"listproj"	: (False, list_project),
 			"h"			: (False, cmd_help),
 			"help"		: (False, cmd_help),
-			# Git functions:
-			"push"		: (False, _git_push),
-			"pull"		: (False, _git_pull),
-			"status"	: (False, _git_status),
-			"log"		: (False, _git_log),
 			}
 	commandsl = [intern(key) for key in commands.keys()]
 
