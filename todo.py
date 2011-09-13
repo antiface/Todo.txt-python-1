@@ -34,6 +34,12 @@ except ImportError:
 	# But it is a nice feature to have. Sucks to be an OSX user.
 	pass
 
+try:
+	intern = intern
+except NameError:
+	# Python 3 moved the built-in intern() to sys.intern()
+	intern = sys.intern
+
 # concat() is necessary long before the grouping of function declarations
 concat = lambda str_list, sep='': sep.join(str_list)
 _path = lambda p: os.path.abspath(os.path.expanduser(p))
