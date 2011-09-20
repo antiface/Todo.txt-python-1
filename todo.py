@@ -580,21 +580,47 @@ def _list_(by, regexp):
 	return (lines, sorted)
 
 
-def list_todo(plain=False, no_priority=False):
+def _list_by_(*args):
+	"""
+	print lines matching items in args
+	"""
+	relist = [re.compile(concat(["\s?", arg, "\s?"])) for arg in args]
+	alines = get_todos()  # all lines
+	lines = alines[:]
+	matched_lines = []
+
+	for regexp in relist:
+		for line in lines:
+			if regexp.search(line):
+				matched_lines.append(line)
+		lines = matched_lines[:]
+	
+	d = format_lines(lines)
+	flines = []
+	for p in ["A", "B", "C", "X"]:
+		flines.extend(d[p])
+	print(concat(flines)[:-1])
+	print_x_of_y(flines, alines)
+
+
+def list_todo(args=None, plain=False, no_priority=False):
 	"""
 	Print the list of todo items in order of priority and position in the
 	todo.txt file.
 	"""
-	lines, sorted = _list_by_("pri", "")
-	print(concat(sorted)[:-1])
-	print_x_of_y(lines, lines)
+	if not args:
+		lines, sorted = _list_("pri", "")
+		print(concat(sorted)[:-1])
+		print_x_of_y(lines, lines)
+	else:
+		_list_by_(*args)
 
 
 def list_date():
 	"""
 	List todo items by date #{yyyy-mm-dd}.
 	"""
-	lines, sorted = _list_by_("date", "#\{(\d{4})-(\d{1,2})-(\d{1,2})\}")
+	lines, sorted = _list_("date", "#\{(\d{4})-(\d{1,2})-(\d{1,2})\}")
 	print(concat(sorted)[:-1])
 	print_x_of_y(sorted, lines)
 
@@ -603,7 +629,7 @@ def list_project():
 	"""
 	Organizes items by project +prj they belong to.
 	"""
-	lines, sorted = _list_by_("project", "\+(\w+)")
+	lines, sorted = _list_("project", "\+(\w+)")
 	print(concat(sorted)[:-1])
 	print_x_of_y(sorted, lines)
 
@@ -729,8 +755,8 @@ if __name__ == "__main__" :
 			"depri"		: ( True, de_prioritize_todo),
 			"del"		: ( True, delete_todo),
 			"rm"		: ( True, delete_todo),
-			"ls"		: (False, list_todo),
-			"list"		: (False, list_todo),
+			"ls"		: ( True, list_todo),
+			"list"		: ( True, list_todo),
 			"lsc"		: (False, list_context),
 			"listcon"	: (False, list_context),
 			"lsd"		: (False, list_date),
@@ -751,7 +777,7 @@ if __name__ == "__main__" :
 			if not commands[arg][0]:
 				commands[arg][1]()
 			else:
-				if re.match("app(end)?", arg):
+				if re.match("app(end)?", arg) or arg in ["ls", "list"]:
 					commands[arg][1](args)
 					args = None
 				elif re.match("p(ri)?", arg) or re.match("pre(pend)?", arg):
