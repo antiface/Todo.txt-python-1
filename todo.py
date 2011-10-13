@@ -74,7 +74,6 @@ CONFIG = {
 		"TMP_FILE" : _pathc([TODO_DIR, "/todo.tmp"]),
 		"DONE_FILE" : _pathc([TODO_DIR, "/done.txt"]),
 		"REPORT_FILE" : _pathc([TODO_DIR, "/report.txt"]),
-		"GIT" : git.Git(TODO_DIR),
 		"PRI_A" : "",
 		"PRI_B" : "",
 		"PRI_C" : "",
@@ -215,8 +214,6 @@ def get_config(config_name="", dir_name=""):
 					CONFIG[items[0]] = items[1]
 
 		f.close()
-	if CONFIG["TODOTXT_CFG_FILE"] not in repo.ls_files():
-		repo.add([CONFIG["TODOTXT_CFG_FILE"]])
 
 
 def default_config():
@@ -807,11 +804,6 @@ if __name__ == "__main__" :
 			"listproj"	: (False, list_project),
 			"h"			: (False, cmd_help),
 			"help"		: (False, cmd_help),
-			# Git functions:
-			"push"		: (False, _git_push),
-			"pull"		: (False, _git_pull),
-			"status"	: (False, _git_status),
-			"log"		: (False, _git_log),
 			}
 	commandsl = [intern(key) for key in commands.keys()]
 

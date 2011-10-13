@@ -1,8 +1,12 @@
 #!/bin/bash
 INSTALL_DIR=$HOME/bin
+<<<<<<< HEAD
 ALIAS_FILE=$HOME/.bashrc
 prog="[""$(basename $0)""] "
 
+=======
+BASH_ALIAS_FILE=$HOME/.bashrc
+>>>>>>> a897934cb61b00933d0f076b183a2b5025e6feb4
 
 Usage(){
 	echo "Usage: $(basename $0) [options]"
@@ -11,6 +15,7 @@ Usage(){
 	echo -e " -h, --help\tdisplays this message and exits"
 	echo -e " --install-dir=/path/to/dir [Default: $INSTALL_DIR]
 		Uses path provided as home directory for todo.py"
+<<<<<<< HEAD
 	echo -e " --alias-file=/path/to/file [Default: $ALIAS_FILE]
 		Uses file to store alias for \$INSTALL_DIR/todo.py"
 }
@@ -49,10 +54,30 @@ while [[ $# -gt 0 ]] ; do
 			;;
         "--" ) break
             ;;
+=======
+	echo -e " --alias-file=/path/to/file [Default: $BASH_ALIAS_FILE]
+		Uses file to store alias for \$INSTALL_DIR/todo.py"
+	exit
+}
+
+set -- $(getopt -l "help,install-dir::,alias-file::" "h" "$@")
+
+while [[ $# -gt 0 ]] ; do 
+	case "$1" in
+		"-h" | "--help" ) Usage
+			;;
+		"--install-dir" ) shift; INSTALL_DIR=$1
+			;;
+		"--alias-file" ) shift; BASH_ALIAS_FILE=${1:1:${#1}-2} #[1]
+			;;
+		"--" ) break
+			;;
+>>>>>>> a897934cb61b00933d0f076b183a2b5025e6feb4
 		* ) shift
 	esac
 done
 
+<<<<<<< HEAD
 [[ -d $INSTALL_DIR ]] || mkdir -p $INSTALL_DIR
 echo $prog"$INSTALL_DIR exists."
 
@@ -72,6 +97,23 @@ fi
 ## Establish alias
 pre="\n\n#Alias for todo.py\n"
 if grep -q -e "todo.sh" -e "todo.py" "$ALIAS_FILE" ; then
+=======
+prog="[""$(basename $0)""] "
+
+[[ -d $INSTALL_DIR ]] || mkdir -p $INSTALL_DIR
++echo $prog"$INSTALL_DIR exists."
+
+[[ -s $BASH_ALIAS_FILE ]] || echo "# Bash RC File" >> $BASH_ALIAS_FILE
+echo $prog"$BASH_ALIAS_FILE exists."
+## Believe it or not, >> is faster than >.
+
+echo $prog"Copying todo.py to $INSTALL_DIR/todo.py"
+cp ./todo.py $INSTALL_DIR
+
+## Establish alias
+pre="\n\n#Alias for todo.py\n"
+if grep -q "todo.sh" "$BASH_ALIAS_FILE" ; then
+>>>>>>> a897934cb61b00933d0f076b183a2b5025e6feb4
 	alias="tpy"
 else
 	alias="t"
@@ -79,9 +121,15 @@ fi
 
 alias_rc=$pre"alias "$alias"='$INSTALL_DIR/todo.py'\n"
 
+<<<<<<< HEAD
 echo -e $alias_rc >> $ALIAS_FILE
 echo $prog"Alias '$alias' added to $ALIAS_FILE."
 echo $prog"To use alias, please run \`source $ALIAS_FILE\`."
+=======
+echo -e $alias_rc >> $BASH_ALIAS_FILE
+echo $prog"Alias '$alias' added to $BASH_ALIAS_FILE."
+echo $prog"To use alias, please run \`source $BASH_ALIAS_FILE\`."
+>>>>>>> a897934cb61b00933d0f076b183a2b5025e6feb4
 echo $prog"You can also add '$INSTALL_DIR' to your PATH variable."
 echo $prog"Installation complete."
 
