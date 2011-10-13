@@ -526,7 +526,6 @@ def format_lines(color_only=False):
 				color = TERM_COLORS[CONFIG["PRI_{0}".format(category)]]
 			if no_priority:
 				line = pri_re.sub("", line)
-	
 		else:
 			category = "X"
 			color = default
@@ -551,7 +550,6 @@ def _legacy_sort(items):
 	etc., etc., etc.
 	"""
 	line_re = re.compile('^.*\d+\s(\([ABC]\)\s)?')
- 	# The .* in the regexp is needed for the \033[* codes
 	keys = [line_re.sub("", i) for i in items]
 	items_dict = dict(zip(keys, items))
 	keys.sort()
@@ -563,7 +561,6 @@ def _list_(by, regexp):
 	"""
 	Master list_*() function.
 	"""
-	lines = get_todos()
 	nonetype = concat(["no", by])
 	todo = {nonetype : []}
 	by_list = []
