@@ -66,6 +66,7 @@ for key in TERM_COLORS.keys():
 del(key, bkey)  # If someone were to import this as a module, these show up.
 
 TODO_DIR = _path('~/.todo')
+PRIORITIES = string.uppercase[0:24]
 
 CONFIG = {
 		"TODO_DIR" : TODO_DIR,
@@ -75,10 +76,6 @@ CONFIG = {
 		"TMP_FILE" : _pathc([TODO_DIR, "/todo.tmp"]),
 		"DONE_FILE" : _pathc([TODO_DIR, "/done.txt"]),
 		"REPORT_FILE" : _pathc([TODO_DIR, "/report.txt"]),
-		"PRI_A" : "",
-		"PRI_B" : "",
-		"PRI_C" : "",
-		"PRI_X" : "",
 		"PLAIN" : False,
 		"NO_PRI" : False,
 		"PRE_DATE" : False,
@@ -88,6 +85,8 @@ CONFIG = {
 		"HIDE_DATE" : False,
 		"LEGACY" : False,
 		}
+for p in PRIORITIES: CONFIG["PRI_{0}".format(p)] = ""
+del(p)
 
 
 ### Helper Functions
@@ -512,7 +511,7 @@ def format_lines(color_only=False):
 	formatted = []
 	if not color_only:
 		formatted = {}
-		for l in string.uppercase[0:24]:
+		for l in PRIORITIES:
 			formatted[l] = []
 
 	pri_re = re.compile('^\(([A-X])\)\s')
@@ -598,7 +597,7 @@ def _list_(by, regexp):
 	elif by == "pri":
 		lines = format_lines()
 		todo.update(lines)
-		by_list = list(string.uppercase[0:24])
+		by_list = list(PRIORITIES)
 
 	by_list.sort()
 
@@ -633,7 +632,7 @@ def _list_by_(*args):
 
 	alines = format_lines() # Retrieves all lines.
 	lines = []
-	for p in list(string.uppercase[0:24]):
+	for p in PRIORITIES:
 		lines.extend(alines[p])
 
 	alines = lines[:]
