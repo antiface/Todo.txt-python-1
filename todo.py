@@ -198,7 +198,7 @@ def get_config(config_name="", dir_name=""):
 		comment_re = re.compile('#')
 		bash_var_re = re.compile('$')
 		bash_val_re = re.compile('=')
-		pri_re = re.compile('PRI_[A-X]')
+		pri_re = re.compile('PRI_[A-X]|DEFAULT')
 		home_re = re.compile('home', re.I)
 
 		for line in f.readlines():
@@ -502,7 +502,7 @@ def format_lines(color_only=False):
 	and organized based upon priority.
 	"""
 	i = 1
-	default = TERM_COLORS["default"]
+	default = TERM_COLORS[CONFIG.get("DEFAULT", "default")]
 	plain = CONFIG["PLAIN"]
 	no_priority = CONFIG["NO_PRI"]
 	category = ""
